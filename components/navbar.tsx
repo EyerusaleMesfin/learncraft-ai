@@ -1,23 +1,46 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useAppState } from "@/components/providers/app-provider";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 
 const primaryLinks = [
-  { href: "/", label: "Home" },
-  { href: "/tracks", label: "Tracks" }
-];
-
-const secondaryLinks = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/login", label: "Login" },
-  { href: "/register", label: "Register" }
+  { href: "/" as const, label: "Home" },
+  { href: "/tracks" as const, label: "Tracks" }
 ];
 
 export function Navbar() {
   const pathname = usePathname();
-  const { currentUser, logout } = useAppState();
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(({ data }: { data: { user: User | null } }) => {
+      setUser(data.user ?? null);
+    });
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
+      setUser(session?.user ?? null);
+      router.refresh();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [router]);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl">
@@ -31,9 +54,9 @@ export function Navbar() {
               Learn by track, prove skills, unlock projects
             </p>
           </div>
-          {currentUser ? (
+          {user ? (
             <div className="rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 lg:hidden">
-              {currentUser.name}
+              {user.user_metadata?.full_name ?? user.email}
             </div>
           ) : null}
         </div>
@@ -41,7 +64,7 @@ export function Navbar() {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <nav className="flex flex-wrap gap-2">
             {primaryLinks.map((link) => {
-              const active = pathname === link.href;
+              const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
 
               return (
                 <Link
@@ -60,36 +83,42 @@ export function Navbar() {
           </nav>
 
           <div className="flex flex-wrap items-center gap-2">
-            {secondaryLinks.map((link) => {
-              if (currentUser && (link.href === "/login" || link.href === "/register")) {
-                return null;
-              }
-
-              return (
+            {user ? (
+              <>
                 <Link
-                  key={link.href}
-                  href={link.href}
+                  href="/dashboard"
                   className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                    pathname === link.href
+                    pathname === "/dashboard"
                       ? "bg-orange-500 text-white"
                       : "bg-white text-slate-700 hover:bg-slate-100"
                   }`}
                 >
-                  {link.label}
+                  Dashboard
                 </Link>
-              );
-            })}
-
-            {currentUser ? (
-              <>
                 <div className="hidden rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 lg:block">
-                  {currentUser.name}
+                  {user.user_metadata?.full_name ?? user.email}
                 </div>
-                <button type="button" className="btn-secondary px-4 py-2" onClick={logout}>
+                <button type="button" className="btn-secondary px-4 py-2" onClick={handleLogout}>
                   Logout
                 </button>
               </>
-            ) : null}
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                    pathname === "/login"
+                      ? "bg-orange-500 text-white"
+                      : "bg-white text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  Login
+                </Link>
+                <Link href="/register" className="btn-secondary px-4 py-2">
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

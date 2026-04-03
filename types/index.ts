@@ -46,20 +46,6 @@ export type NotificationItem = {
   createdAt: string;
 };
 
-export type UserRecord = {
-  id: string;
-  name: string;
-  email: string;
-  password: string;
-};
-
-export type SessionUser = {
-  id: string;
-  name: string;
-  email: string;
-  provider: "password" | "google";
-};
-
 export type SubmissionRecord = {
   id: string;
   trackSlug: string;
@@ -85,14 +71,6 @@ export type ProjectProgress = {
   latestFeedback?: string;
   deadlineAt?: string;
   attemptCount: number;
-};
-
-export type AppState = {
-  users: UserRecord[];
-  currentUser: SessionUser | null;
-  notifications: NotificationItem[];
-  submissions: SubmissionRecord[];
-  progress: Record<string, ProjectProgress>;
 };
 
 export type DashboardSummary = {

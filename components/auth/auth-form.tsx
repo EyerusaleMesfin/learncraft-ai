@@ -3,25 +3,90 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useAppState } from "@/components/providers/app-provider";
+import { createClient } from "@/lib/supabase/client";
 import { getPasswordChecks, getPasswordStrength, validateEmail } from "@/lib/validators";
 
 type AuthMode = "login" | "register";
 
 export function AuthForm({ mode }: { mode: AuthMode }) {
   const router = useRouter();
-  const { login, loginWithGoogle, register } = useAppState();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [messageTone, setMessageTone] = useState<"success" | "error">("success");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const passwordChecks = useMemo(() => getPasswordChecks(password), [password]);
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleRegister = async () => {
+    const isStrongPassword = Object.values(passwordChecks).every(Boolean);
+
+    if (!fullName.trim()) {
+      throw new Error("Please add your full name.");
+    }
+
+    if (!isStrongPassword) {
+      throw new Error("Use a stronger password before creating your account.");
+    }
+
+    if (password !== confirmPassword) {
+      throw new Error("Your password confirmation does not match.");
+    }
+
+    const supabase = createClient();
+    const redirectUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/auth/confirm?next=/dashboard`
+        : undefined;
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          full_name: fullName
+        }
+      }
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (data.session) {
+      setMessageTone("success");
+      setMessage("Account created successfully.");
+      router.push("/dashboard");
+      router.refresh();
+      return;
+    }
+
+    setMessageTone("success");
+    setMessage("Check your email to confirm your account, then sign in.");
+  };
+
+  const handleLogin = async () => {
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    setMessageTone("success");
+    setMessage("Logged in successfully.");
+    router.push("/dashboard");
+    router.refresh();
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!validateEmail(email)) {
@@ -30,54 +95,42 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       return;
     }
 
-    if (mode === "register") {
-      const isStrongPassword = Object.values(passwordChecks).every(Boolean);
+    setIsSubmitting(true);
+    setMessage("");
 
-      if (!fullName.trim()) {
-        setMessageTone("error");
-        setMessage("Please add your full name.");
-        return;
+    try {
+      if (mode === "register") {
+        await handleRegister();
+      } else {
+        await handleLogin();
       }
-
-      if (!isStrongPassword) {
-        setMessageTone("error");
-        setMessage("Use a stronger password before creating your account.");
-        return;
-      }
-
-      if (password !== confirmPassword) {
-        setMessageTone("error");
-        setMessage("Your password confirmation does not match.");
-        return;
-      }
-
-      const result = register({ name: fullName, email, password });
-      setMessageTone(result.success ? "success" : "error");
-      setMessage(result.message);
-
-      if (result.success) {
-        router.push("/dashboard");
-      }
-
-      return;
-    }
-
-    const result = login({ email, password });
-    setMessageTone(result.success ? "success" : "error");
-    setMessage(result.message);
-
-    if (result.success) {
-      router.push("/dashboard");
+    } catch (error) {
+      setMessageTone("error");
+      setMessage(error instanceof Error ? error.message : "Something went wrong.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleGoogleSignIn = () => {
-    const result = loginWithGoogle();
-    setMessageTone(result.success ? "success" : "error");
-    setMessage(result.message);
+  const handleGoogleSignIn = async () => {
+    setMessage("");
 
-    if (result.success) {
-      router.push("/dashboard");
+    const supabase = createClient();
+    const redirectTo =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/auth/callback?next=/dashboard`
+        : undefined;
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo
+      }
+    });
+
+    if (error) {
+      setMessageTone("error");
+      setMessage(error.message);
     }
   };
 
@@ -89,8 +142,8 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       </h1>
       <p className="mt-3 text-sm leading-6 text-slate-600">
         {mode === "login"
-          ? "Use your email and password or try the mock Google sign-in flow for the MVP demo."
-          : "Register with a strong password so the front-end flow is ready for a real backend later."}
+          ? "Use your Supabase email/password account or continue with Google."
+          : "Register with email/password. Supabase will handle the secure account flow."}
       </p>
 
       <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
@@ -118,7 +171,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
           />
           <p className="mt-2 text-xs text-slate-500">
             {email.length === 0 || validateEmail(email)
-              ? "We validate email format on the client before submit."
+              ? "Email format is validated before sending to Supabase."
               : "This email format looks invalid."}
           </p>
         </div>
@@ -165,8 +218,8 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
           </>
         ) : null}
 
-        <button type="submit" className="btn-primary w-full">
-          {mode === "login" ? "Login" : "Register"}
+        <button type="submit" className="btn-primary w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Please wait..." : mode === "login" ? "Login" : "Register"}
         </button>
       </form>
 
@@ -194,11 +247,6 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         >
           {mode === "login" ? "Register here" : "Login here"}
         </Link>
-      </p>
-
-      <p className="mt-3 text-xs leading-5 text-slate-500">
-        Backend note: this MVP stores demo auth data in local storage. Replace it
-        with your real auth provider and server-side session handling later.
       </p>
     </div>
   );

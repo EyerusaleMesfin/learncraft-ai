@@ -52,12 +52,12 @@ export default function HomePage() {
       <section className="page-shell grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="card p-8">
           <span className="pill">Project system</span>
-          <h2 className="mt-4 section-title">Timed projects, mock scoring, visible progress</h2>
+          <h2 className="mt-4 section-title">Timed projects, real accounts, server-backed progress</h2>
           <p className="mt-4 section-copy">
-            Learners can submit GitHub links or pasted code, receive a mock AI score,
-            and see project unlocks reflected in their dashboard. This front-end is
-            structured so real backend auth, storage, and evaluation services can be
-            connected later.
+            Learners can submit GitHub links or pasted code, receive real backend
+            evaluation, and see unlocks reflected in their database-backed dashboard.
+            Google OAuth, protected routes, notification persistence, and production
+            deployment scaffolding are now built into the project structure.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Link href="/tracks/ai-development/intermediate" className="btn-primary">

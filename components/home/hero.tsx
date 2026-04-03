@@ -11,8 +11,8 @@ export function Hero() {
           </h1>
           <p className="max-w-2xl text-lg leading-8 text-slate-600">
             Learn Craft AI helps students choose a development track, match the right
-            skill level, study recommended material, and unlock projects with mock AI
-            feedback and progress tracking.
+            skill level, study recommended material, and unlock projects with
+            server-backed AI evaluation, real auth, and persistent progress tracking.
           </p>
           <div className="flex flex-wrap gap-4">
             <Link href="/register" className="btn-primary">
@@ -27,9 +27,9 @@ export function Hero() {
         <div className="card overflow-hidden p-6">
           <div className="rounded-[32px] bg-slate-950 p-6 text-white">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-300">MVP snapshot</span>
+              <span className="text-sm font-semibold text-slate-300">Platform snapshot</span>
               <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-slate-100">
-                Front-end demo
+                Full-stack base
               </span>
             </div>
 

@@ -1,88 +1,69 @@
-# Learn Craft AI MVP
+# Learn Craft AI
 
-This is a clean starter for your hackathon project using a single `Next.js` app.
+This project uses Next.js and Supabase Authentication for real user auth.
 
-## Do you need separate frontend and backend folders?
+## Features
 
-No, not for the MVP.
+- Email/password signup
+- Email/password login
+- Google OAuth login
+- Session handling with Supabase SSR cookies
+- Protected pages for dashboard and track routes
 
-Use one app first:
-
-- `app/` for pages and UI
-- `app/api/` for simple backend endpoints
-- `components/` for reusable UI
-- `data/` for mock content
-- `lib/` for helper logic
-- `types/` for shared TypeScript types
-
-This is faster and easier than creating separate `frontend` and `backend` folders.
-
-## Project modules
-
-1. `Module 1 - Auth`
-   - `app/login/page.tsx`
-   - `app/register/page.tsx`
-   - UI only for now, ready for Supabase or Firebase
-
-2. `Module 2 - Home & Landing`
-   - `app/page.tsx`
-   - `components/home/*`
-   - Welcome section and 2-step carousel/stepper
-
-3. `Module 3 - Track Selection`
-   - `app/tracks/page.tsx`
-   - Choose AI Development, App Development, or Web Development
-
-4. `Module 4 - Level Selection & Path`
-   - `app/tracks/[track]/page.tsx`
-   - `app/tracks/[track]/[level]/page.tsx`
-   - Beginner, Intermediate, Advanced flows
-
-5. `Module 5 - Resources`
-   - `data/tracks.ts`
-   - Hardcoded YouTube and article links for now
-
-6. `Module 6 - Project System`
-   - `components/path/learning-path-client.tsx`
-   - `components/path/project-card.tsx`
-   - Timed projects and submission flow
-
-7. `Module 7 - AI Evaluator`
-   - `app/api/evaluate/route.ts`
-   - `lib/mock-ai.ts`
-   - Mock scoring from 0 to 100
-
-8. `Module 8 - Notifications`
-   - `components/notification-preview.tsx`
-   - `app/dashboard/page.tsx`
-
-9. `Module 9 - Progress Dashboard`
-   - `app/dashboard/page.tsx`
-
-## How to start
-
-1. Install packages:
+## Install
 
 ```powershell
 npm.cmd install
 ```
 
-2. Run the app:
+## Environment
+
+Copy the example file and add your Supabase values:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+Required variables:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
+```
+
+## Supabase Setup
+
+1. Create a Supabase project.
+2. In Supabase Dashboard, go to `Authentication > Providers`.
+3. Enable `Email`.
+4. Enable `Google`.
+5. Add your site URL and redirect URLs.
+
+Recommended redirect URLs:
+
+- `http://localhost:3000/auth/callback`
+- `http://localhost:3000/auth/confirm`
+- Your production domain equivalents
+
+For SSR email confirmation, update the `Confirm signup` email template in Supabase:
+
+```text
+{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/dashboard
+```
+
+For Google OAuth, configure the Google provider in Supabase and add:
+
+- `http://localhost:3000/auth/callback`
+- your production callback URL
+
+## Run
 
 ```powershell
 npm.cmd run dev
 ```
 
-3. Open:
+## Notes
 
-```text
-http://localhost:3000
-```
-
-## Recommended next steps
-
-1. Connect Supabase or Firebase for real auth and database
-2. Save user progress and submissions
-3. Replace mock AI scoring with OpenAI, Grok, or Claude API
-4. Add protected routes after auth works
-5. Move resources and projects from hardcoded data into a database
+- Authentication is now handled with Supabase.
+- Middleware refreshes sessions and protects routes.
+- Dashboard and track pages redirect to login when the user is not authenticated.

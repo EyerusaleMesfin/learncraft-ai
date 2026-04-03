@@ -1,29 +1,31 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ProjectCard } from "@/components/path/project-card";
 import { ResourceCard } from "@/components/path/resource-card";
-import { useAppState } from "@/components/providers/app-provider";
 import { getLearningPath } from "@/data/tracks";
-import type { LevelSlug, Track } from "@/types";
+import type { LevelSlug, ProjectProgress, Track } from "@/types";
 
 type EvaluationResult = {
   score: number;
   verdict: "pass" | "retry";
   feedback: string;
+  progress?: ProjectProgress;
 };
 
 export function LearningPathClient({
   track,
-  level
+  level,
+  initialProgress
 }: {
   track: Track;
   level: LevelSlug;
+  initialProgress: ProjectProgress | null;
 }) {
+  const router = useRouter();
   const path = useMemo(() => getLearningPath(track.slug, level), [track.slug, level]);
-  const { currentUser, progress, completeBeginnerResources, submitProject } = useAppState();
-  const progressKey = `${track.slug}:${level}`;
-  const currentProgress = progress[progressKey];
+  const [progress, setProgress] = useState<ProjectProgress | null>(initialProgress);
   const [skillCheckGithubUrl, setSkillCheckGithubUrl] = useState("");
   const [skillCheckCode, setSkillCheckCode] = useState("");
   const [projectGithubUrl, setProjectGithubUrl] = useState("");
@@ -34,71 +36,131 @@ export function LearningPathClient({
   const [submitMessage, setSubmitMessage] = useState("");
 
   const isBeginner = level === "beginner";
-  const resourcesUnlocked = isBeginner
-    ? true
-    : currentProgress?.resourcesUnlocked || evaluation?.score >= 50;
+  const resourcesUnlocked = isBeginner ? true : progress?.resourcesUnlocked ?? false;
   const mainProjectUnlocked = isBeginner
-    ? currentProgress?.mainProjectUnlocked ?? false
-    : currentProgress?.mainProjectUnlocked || evaluation?.score >= 50;
-  const deadlineLabel = currentProgress?.deadlineAt
-    ? new Date(currentProgress.deadlineAt).toLocaleDateString()
+    ? progress?.mainProjectUnlocked ?? false
+    : progress?.mainProjectUnlocked ?? false;
+  const deadlineLabel = progress?.deadlineAt
+    ? new Date(progress.deadlineAt).toLocaleDateString()
     : "Will start when the project unlocks";
 
-  const handleBeginnerUnlock = () => {
-    completeBeginnerResources(track.slug, level, path.mainProject.timeLimitDays);
-  };
-
-  const handleEvaluate = async () => {
-    if (!skillCheckGithubUrl.trim() && !skillCheckCode.trim()) {
-      setSubmitMessage("Add a GitHub link or paste code before submitting.");
-      return;
+  const syncProgress = (nextProgress?: ProjectProgress) => {
+    if (nextProgress) {
+      setProgress(nextProgress);
     }
 
+    router.refresh();
+  };
+
+  const handleBeginnerUnlock = async () => {
     setIsSubmitting(true);
     setSubmitMessage("");
 
     try {
-      const result = await submitProject({
-        trackSlug: track.slug,
-        trackTitle: track.title,
-        level,
-        githubUrl: skillCheckGithubUrl,
-        code: skillCheckCode,
-        deadlineDays: (path.skillCheckProject ?? path.mainProject).timeLimitDays
+      const response = await fetch("/api/paths/unlock", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          trackSlug: track.slug,
+          level
+        })
       });
 
+      if (!response.ok) {
+        const payload = (await response.json()) as { message?: string };
+        throw new Error(payload.message ?? "Could not unlock the project.");
+      }
+
+      setSubmitMessage("Resources completed. Your timed project is now unlocked.");
+      syncProgress({
+        trackSlug: track.slug,
+        level,
+        resourcesCompleted: true,
+        resourcesUnlocked: true,
+        mainProjectUnlocked: true,
+        completed: progress?.completed ?? false,
+        mastery: progress?.mastery ?? 0,
+        latestScore: progress?.latestScore,
+        latestFeedback: progress?.latestFeedback,
+        deadlineAt:
+          progress?.deadlineAt ??
+          new Date(
+            Date.now() + path.mainProject.timeLimitDays * 24 * 60 * 60 * 1000
+          ).toISOString(),
+        attemptCount: progress?.attemptCount ?? 0
+      });
+    } catch (error) {
+      setSubmitMessage(error instanceof Error ? error.message : "Could not unlock the project.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const submitEvaluation = async (
+    submissionType: "skill-check" | "main-project",
+    githubUrl: string,
+    code: string
+  ) => {
+    if (!githubUrl.trim() && !code.trim()) {
+      throw new Error("Add a GitHub link or paste code before submitting.");
+    }
+
+    const response = await fetch("/api/evaluate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        track: track.slug,
+        level,
+        githubUrl,
+        code,
+        submissionType
+      })
+    });
+
+    const payload = (await response.json()) as EvaluationResult & { message?: string };
+
+    if (!response.ok) {
+      throw new Error(payload.message ?? "Project evaluation failed.");
+    }
+
+    return payload;
+  };
+
+  const handleEvaluate = async () => {
+    setIsSubmitting(true);
+    setSubmitMessage("");
+
+    try {
+      const result = await submitEvaluation("skill-check", skillCheckGithubUrl, skillCheckCode);
       setEvaluation(result);
+      syncProgress(result.progress);
       setSubmitMessage(
         result.score >= 50
           ? "Pass mark reached. Materials and the next project are unlocked."
           : "Score below 50%. Review the resources and retry."
       );
+    } catch (error) {
+      setSubmitMessage(error instanceof Error ? error.message : "Project evaluation failed.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleMainProjectSubmit = async () => {
-    if (!projectGithubUrl.trim() && !projectCode.trim()) {
-      setSubmitMessage("Add a GitHub link or paste code for the unlocked project.");
-      return;
-    }
-
     setIsSubmitting(true);
     setSubmitMessage("");
 
     try {
-      const result = await submitProject({
-        trackSlug: track.slug,
-        trackTitle: track.title,
-        level,
-        githubUrl: projectGithubUrl,
-        code: projectCode,
-        deadlineDays: path.mainProject.timeLimitDays
-      });
-
+      const result = await submitEvaluation("main-project", projectGithubUrl, projectCode);
       setProjectEvaluation(result);
+      syncProgress(result.progress);
       setSubmitMessage(`Unlocked project scored ${result.score}%. Feedback updated below.`);
+    } catch (error) {
+      setSubmitMessage(error instanceof Error ? error.message : "Project evaluation failed.");
     } finally {
       setIsSubmitting(false);
     }
@@ -117,28 +179,26 @@ export function LearningPathClient({
         </h1>
         <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">{path.intro}</p>
         <p className="mt-4 text-sm text-slate-500">
-          {currentUser
-            ? `Signed in as ${currentUser.name}.`
-            : "You can explore the path without signing in, but dashboard progress works best after login."}
+          Progress and submissions are now tied to your real account and stored in the database.
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
         <div className="card p-8">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="pill">
-              {isBeginner ? "Beginner flow" : "Skill-check flow"}
-            </span>
+            <span className="pill">{isBeginner ? "Beginner flow" : "Skill-check flow"}</span>
             {!isBeginner ? <span className="pill">Pass mark: 50%</span> : null}
           </div>
 
           <h2 className="mt-4 text-2xl font-bold text-slate-900">
-            {isBeginner ? "Step 1: Complete the learning resources" : "Step 1: Submit your skill-check project"}
+            {isBeginner
+              ? "Step 1: Complete the learning resources"
+              : "Step 1: Submit your skill-check project"}
           </h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
             {isBeginner
               ? "These beginner resources are available immediately. Once the learner finishes them, the timed project unlocks."
-              : "Intermediate and advanced learners begin with a project submission. The mock AI score decides whether materials and the next project unlock."}
+              : "Intermediate and advanced learners begin with a real server-side project submission. The score determines what unlocks next."}
           </p>
 
           {path.skillCheckProject && !isBeginner ? (
@@ -154,8 +214,13 @@ export function LearningPathClient({
                   <ResourceCard key={resource.title} resource={resource} />
                 ))}
               </div>
-              <button type="button" className="btn-primary" onClick={handleBeginnerUnlock}>
-                Mark resources complete and unlock project
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleBeginnerUnlock}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Unlocking..." : "Mark resources complete and unlock project"}
               </button>
             </div>
           ) : (
@@ -191,10 +256,6 @@ export function LearningPathClient({
               >
                 {isSubmitting ? "Evaluating project..." : "Submit for AI evaluation"}
               </button>
-              <p className="text-xs leading-5 text-slate-500">
-                Backend note: this currently posts to local mock API routes. Swap in
-                your real submission storage and AI evaluation pipeline later.
-              </p>
             </div>
           )}
 
@@ -235,7 +296,7 @@ export function LearningPathClient({
               </div>
               <div className="rounded-2xl bg-slate-50 p-4">Deadline: {deadlineLabel}</div>
               <div className="rounded-2xl bg-slate-50 p-4">
-                Latest mastery: {currentProgress?.mastery ?? 0}%
+                Latest mastery: {progress?.mastery ?? 0}%
               </div>
             </div>
           </div>
@@ -256,8 +317,7 @@ export function LearningPathClient({
               <h2 className="text-2xl font-bold text-slate-900">Resources unlock on pass</h2>
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 Score 50% or higher on the skill check to unlock these high-rated
-                articles and videos. If you score below 50%, this panel guides the
-                learner to retry after reviewing the materials.
+                articles and videos. Retry attempts are stored in your progress history.
               </p>
             </div>
           )}
@@ -271,7 +331,7 @@ export function LearningPathClient({
           </h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
             {isBeginner
-              ? "This is the project beginners unlock after completing their recommended learning materials."
+              ? "This project unlocks after the beginner resources are completed."
               : "Passing the skill check unlocks both supporting materials and the next timed project."}
           </p>
           <div className="mt-6">
