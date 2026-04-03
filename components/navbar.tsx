@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
+import { UserMenu } from "@/components/auth/user-menu";
 import { createClient } from "@/lib/supabase/client";
 
 const primaryLinks = [
@@ -34,13 +35,6 @@ export function Navbar() {
       subscription.unsubscribe();
     };
   }, [router]);
-
-  const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl">
@@ -84,24 +78,7 @@ export function Navbar() {
 
           <div className="flex flex-wrap items-center gap-2">
             {user ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                    pathname === "/dashboard"
-                      ? "bg-orange-500 text-white"
-                      : "bg-white text-slate-700 hover:bg-slate-100"
-                  }`}
-                >
-                  Dashboard
-                </Link>
-                <div className="hidden rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 lg:block">
-                  {user.user_metadata?.full_name ?? user.email}
-                </div>
-                <button type="button" className="btn-secondary px-4 py-2" onClick={handleLogout}>
-                  Logout
-                </button>
-              </>
+              <UserMenu user={user} dashboardActive={pathname === "/dashboard"} />
             ) : (
               <>
                 <Link
