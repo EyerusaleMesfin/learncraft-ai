@@ -13,10 +13,12 @@ export default async function DashboardPage() {
   const displayName = user.user_metadata?.full_name ?? user.email ?? "Learner";
 
   return (
-    <div className="page-shell py-12">
+    <div className="page-shell py-12" data-testid="dashboard-page">
       <div className="max-w-3xl space-y-4">
         <span className="pill">Progress Dashboard</span>
-        <h1 className="section-title">{displayName}'s dashboard</h1>
+        <h1 className="section-title" data-testid="dashboard-heading">
+          {displayName}'s dashboard
+        </h1>
         <p className="section-copy">
           This page is now protected by Supabase authentication. Only logged-in users
           can access dashboard and track pages.

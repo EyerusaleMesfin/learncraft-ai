@@ -1,4 +1,12 @@
-import type { DashboardSummary, LearningPath, LevelInfo, LevelSlug, Track } from "@/types";
+import type {
+  DashboardSummary,
+  LearningPath,
+  LevelInfo,
+  LevelSlug,
+  RecommendedResource,
+  Track,
+  TrackSubcategory
+} from "@/types";
 
 export const levels: LevelInfo[] = [
   {
@@ -30,23 +38,362 @@ export const tracks: Track[] = [
     title: "AI Development",
     summary:
       "Learn prompt engineering, AI UX, and feature integration through guided resources, skill checks, and timed projects.",
-    color: "#ef7d34"
+    color: "#ef7d34",
+    subcategories: [
+      {
+        slug: "machine-learning",
+        title: "Machine Learning",
+        overview:
+          "Focus on models, experimentation, evaluation, and practical ML systems thinking.",
+        promptFocus: "machine learning foundations, projects, courses, and hands-on practice"
+      },
+      {
+        slug: "data-science",
+        title: "Data Science",
+        overview:
+          "Explore analytics, data workflows, notebooks, visualization, and applied decision-making.",
+        promptFocus: "data science learning resources, portfolios, courses, and datasets"
+      },
+      {
+        slug: "nlp",
+        title: "NLP",
+        overview:
+          "Learn language modeling, text pipelines, embeddings, and modern natural language applications.",
+        promptFocus: "NLP tutorials, modern language AI, embeddings, and text application resources"
+      }
+    ]
   },
   {
     slug: "app-development",
     title: "App Development",
     summary:
       "Practice product thinking, app flows, APIs, and delivery patterns with realistic challenge-based learning.",
-    color: "#0f766e"
+    color: "#0f766e",
+    subcategories: [
+      {
+        slug: "ios",
+        title: "iOS",
+        overview:
+          "Build polished native Apple experiences with Swift, SwiftUI, and platform-specific UX patterns.",
+        promptFocus: "iOS development roadmap, SwiftUI resources, and practical app projects"
+      },
+      {
+        slug: "android",
+        title: "Android",
+        overview:
+          "Work on Kotlin, Jetpack Compose, Android architecture, and production-ready mobile workflows.",
+        promptFocus: "Android development roadmap, Kotlin resources, and mobile project practice"
+      },
+      {
+        slug: "cross-platform",
+        title: "Cross-Platform",
+        overview:
+          "Ship across devices with shared UI, shared logic, and strong product execution.",
+        promptFocus: "cross-platform mobile development with React Native or Flutter resources"
+      }
+    ]
   },
   {
     slug: "web-development",
     title: "Web Development",
     summary:
       "Build strong frontend and full-stack instincts with responsive UI, routing, and reusable component projects.",
-    color: "#2563eb"
+    color: "#2563eb",
+    subcategories: [
+      {
+        slug: "frontend",
+        title: "Frontend",
+        overview:
+          "Master UI architecture, styling systems, accessibility, and delightful browser experiences.",
+        promptFocus: "frontend web development resources, modern React, CSS, and accessibility"
+      },
+      {
+        slug: "backend",
+        title: "Backend",
+        overview:
+          "Learn APIs, databases, auth, queues, and server-side reliability for modern applications.",
+        promptFocus: "backend web development resources, APIs, databases, and server architecture"
+      },
+      {
+        slug: "fullstack",
+        title: "Fullstack",
+        overview:
+          "Connect product thinking across frontend, backend, auth, and deployment from one codebase.",
+        promptFocus: "fullstack web development resources with Next.js, auth, databases, and deployment"
+      }
+    ]
   }
 ];
+
+const fallbackRecommendations: Record<string, Record<string, RecommendedResource[]>> = {
+  "ai-development": {
+    "machine-learning": [
+      {
+        type: "Course",
+        title: "Machine Learning Specialization",
+        description:
+          "A structured path through supervised learning, trees, neural networks, and practical model evaluation.",
+        url: "https://www.coursera.org/specializations/machine-learning-introduction",
+        rating: "4.9/5",
+        source: "fallback"
+      },
+      {
+        type: "Guide",
+        title: "Scikit-learn User Guide",
+        description:
+          "Hands-on documentation for common ML algorithms, preprocessing steps, and evaluation patterns.",
+        url: "https://scikit-learn.org/stable/user_guide.html",
+        rating: "4.8/5",
+        source: "fallback"
+      },
+      {
+        type: "Website",
+        title: "Kaggle Learn",
+        description:
+          "Short practical lessons and exercises for model building, feature engineering, and experimentation.",
+        url: "https://www.kaggle.com/learn",
+        rating: "4.8/5",
+        source: "fallback"
+      }
+    ],
+    "data-science": [
+      {
+        type: "Course",
+        title: "Data Analysis with Python",
+        description:
+          "Learn data wrangling, analysis, and visualization through notebook-driven practice.",
+        url: "https://www.freecodecamp.org/learn/data-analysis-with-python/",
+        rating: "4.8/5",
+        source: "fallback"
+      },
+      {
+        type: "Website",
+        title: "Pandas Documentation",
+        description:
+          "Core reference material for cleaning datasets, aggregating information, and building analysis workflows.",
+        url: "https://pandas.pydata.org/docs/",
+        rating: "4.7/5",
+        source: "fallback"
+      },
+      {
+        type: "Guide",
+        title: "Storytelling with Data",
+        description:
+          "Sharp advice on presenting insights clearly and making visual analysis more persuasive.",
+        url: "https://www.storytellingwithdata.com/",
+        rating: "4.7/5",
+        source: "fallback"
+      }
+    ],
+    nlp: [
+      {
+        type: "Course",
+        title: "Natural Language Processing Specialization",
+        description:
+          "Build intuition for language models, sequence methods, and practical NLP systems.",
+        url: "https://www.coursera.org/specializations/natural-language-processing",
+        rating: "4.8/5",
+        source: "fallback"
+      },
+      {
+        type: "Website",
+        title: "Hugging Face Course",
+        description:
+          "A practical path into transformers, tokenization, inference, and modern NLP tooling.",
+        url: "https://huggingface.co/learn",
+        rating: "4.9/5",
+        source: "fallback"
+      },
+      {
+        type: "Guide",
+        title: "spaCy Usage Guides",
+        description:
+          "Helpful references for pipelines, named entities, text classification, and production usage.",
+        url: "https://spacy.io/usage",
+        rating: "4.7/5",
+        source: "fallback"
+      }
+    ]
+  },
+  "app-development": {
+    ios: [
+      {
+        type: "Course",
+        title: "Develop in Swift Tutorials",
+        description:
+          "Apple’s official tutorials for Swift fundamentals, app architecture, and SwiftUI patterns.",
+        url: "https://developer.apple.com/tutorials/develop-in-swift",
+        rating: "4.8/5",
+        source: "fallback"
+      },
+      {
+        type: "Website",
+        title: "SwiftUI Essentials",
+        description:
+          "Learn the building blocks of native Apple interfaces with real examples and patterns.",
+        url: "https://developer.apple.com/tutorials/swiftui",
+        rating: "4.8/5",
+        source: "fallback"
+      },
+      {
+        type: "Guide",
+        title: "Hacking with Swift",
+        description:
+          "Project-based Swift and SwiftUI learning with a strong practical focus.",
+        url: "https://www.hackingwithswift.com/",
+        rating: "4.9/5",
+        source: "fallback"
+      }
+    ],
+    android: [
+      {
+        type: "Course",
+        title: "Android Basics with Compose",
+        description:
+          "Google’s guided curriculum for Kotlin, Compose, app state, and Android patterns.",
+        url: "https://developer.android.com/courses/android-basics-compose/course",
+        rating: "4.8/5",
+        source: "fallback"
+      },
+      {
+        type: "Website",
+        title: "Android Developer Guides",
+        description:
+          "Official references for architecture, navigation, storage, and app quality.",
+        url: "https://developer.android.com/guide",
+        rating: "4.8/5",
+        source: "fallback"
+      },
+      {
+        type: "Guide",
+        title: "Kotlin for Android",
+        description:
+          "A focused route into Kotlin language features most relevant for Android development.",
+        url: "https://kotlinlang.org/docs/android-overview.html",
+        rating: "4.7/5",
+        source: "fallback"
+      }
+    ],
+    "cross-platform": [
+      {
+        type: "Course",
+        title: "React Native Documentation",
+        description:
+          "Learn shared mobile UI patterns, platform APIs, and release workflows from the official docs.",
+        url: "https://reactnative.dev/docs/getting-started",
+        rating: "4.7/5",
+        source: "fallback"
+      },
+      {
+        type: "Website",
+        title: "Flutter Learning Journey",
+        description:
+          "Google’s practical path for widgets, state, layouts, and cross-platform delivery.",
+        url: "https://docs.flutter.dev/",
+        rating: "4.8/5",
+        source: "fallback"
+      },
+      {
+        type: "Guide",
+        title: "Expo Learn",
+        description:
+          "A fast way to build and ship React Native apps with tooling that stays developer-friendly.",
+        url: "https://docs.expo.dev/",
+        rating: "4.8/5",
+        source: "fallback"
+      }
+    ]
+  },
+  "web-development": {
+    frontend: [
+      {
+        type: "Course",
+        title: "Frontend Developer Career Path",
+        description:
+          "A broad route through HTML, CSS, JavaScript, React, and UI engineering projects.",
+        url: "https://scrimba.com/learn/frontend",
+        rating: "4.8/5",
+        source: "fallback"
+      },
+      {
+        type: "Website",
+        title: "MDN Web Docs",
+        description:
+          "The core reference for web standards, browser APIs, CSS layout, and accessibility.",
+        url: "https://developer.mozilla.org/",
+        rating: "4.9/5",
+        source: "fallback"
+      },
+      {
+        type: "Guide",
+        title: "React Learn",
+        description:
+          "The official React learning path covering components, state, effects, and modern patterns.",
+        url: "https://react.dev/learn",
+        rating: "4.9/5",
+        source: "fallback"
+      }
+    ],
+    backend: [
+      {
+        type: "Course",
+        title: "Backend Development and APIs",
+        description:
+          "Build API instincts with Node.js, Express, databases, and service design fundamentals.",
+        url: "https://www.freecodecamp.org/learn/back-end-development-and-apis/",
+        rating: "4.7/5",
+        source: "fallback"
+      },
+      {
+        type: "Website",
+        title: "Node.js Learn",
+        description:
+          "Official backend learning materials covering modules, async work, and server foundations.",
+        url: "https://nodejs.org/en/learn",
+        rating: "4.7/5",
+        source: "fallback"
+      },
+      {
+        type: "Guide",
+        title: "PostgreSQL Tutorial",
+        description:
+          "A practical database learning path for schema design, queries, and relational thinking.",
+        url: "https://www.postgresqltutorial.com/",
+        rating: "4.6/5",
+        source: "fallback"
+      }
+    ],
+    fullstack: [
+      {
+        type: "Course",
+        title: "Full Stack Open",
+        description:
+          "A project-heavy modern fullstack curriculum covering React, Node, APIs, auth, and deployment.",
+        url: "https://fullstackopen.com/en/",
+        rating: "4.9/5",
+        source: "fallback"
+      },
+      {
+        type: "Website",
+        title: "Next.js Learn",
+        description:
+          "A practical route into routing, rendering, data loading, auth, and deployment in Next.js.",
+        url: "https://nextjs.org/learn",
+        rating: "4.8/5",
+        source: "fallback"
+      },
+      {
+        type: "Guide",
+        title: "Supabase Docs",
+        description:
+          "Helpful guides for auth, Postgres, storage, and real product workflows in one backend platform.",
+        url: "https://supabase.com/docs",
+        rating: "4.8/5",
+        source: "fallback"
+      }
+    ]
+  }
+};
 
 const learningPaths: Record<string, Record<LevelSlug, LearningPath>> = {
   "ai-development": {
@@ -476,6 +823,19 @@ export const starterDashboard: DashboardSummary = {
 
 export function getTrackBySlug(slug: string) {
   return tracks.find((track) => track.slug === slug);
+}
+
+export function getSubcategoryBySlug(trackSlug: string, subcategorySlug: string) {
+  return getTrackBySlug(trackSlug)?.subcategories.find(
+    (subcategory) => subcategory.slug === subcategorySlug
+  );
+}
+
+export function getFallbackRecommendations(
+  trackSlug: string,
+  subcategorySlug: string
+): RecommendedResource[] {
+  return fallbackRecommendations[trackSlug]?.[subcategorySlug] ?? [];
 }
 
 export function isValidLevel(level: string): level is LevelSlug {

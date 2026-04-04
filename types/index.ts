@@ -5,6 +5,14 @@ export type Track = {
   title: string;
   summary: string;
   color: string;
+  subcategories: TrackSubcategory[];
+};
+
+export type TrackSubcategory = {
+  slug: string;
+  title: string;
+  overview: string;
+  promptFocus: string;
 };
 
 export type LevelInfo = {
@@ -20,6 +28,10 @@ export type Resource = {
   description: string;
   url: string;
   rating: string;
+};
+
+export type RecommendedResource = Resource & {
+  source: "openai" | "fallback";
 };
 
 export type Project = {

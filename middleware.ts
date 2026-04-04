@@ -5,14 +5,8 @@ const protectedRoutes = ["/dashboard", "/tracks"];
 const authRoutes = ["/login", "/register"];
 
 export async function middleware(request: NextRequest) {
-  const response = await updateSession(request);
-  const accessToken =
-    request.cookies.get("sb-access-token")?.value ??
-    request.cookies
-      .getAll()
-      .find((cookie) => cookie.name.includes("-auth-token"))
-      ?.value;
-  const isLoggedIn = Boolean(accessToken);
+  const { response, user } = await updateSession(request);
+  const isLoggedIn = Boolean(user);
   const { pathname } = request.nextUrl;
 
   const isProtectedRoute = protectedRoutes.some(

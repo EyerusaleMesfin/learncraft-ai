@@ -3,10 +3,12 @@ import { tracks } from "@/data/tracks";
 
 export default function TracksPage() {
   return (
-    <div className="page-shell py-12">
+    <div className="page-shell py-12" data-testid="tracks-page">
       <div className="max-w-3xl space-y-4">
         <span className="pill">Track selection</span>
-        <h1 className="section-title">Choose a development track</h1>
+        <h1 className="section-title" data-testid="tracks-heading">
+          Choose a development track
+        </h1>
         <p className="section-copy">
           Each track includes beginner, intermediate, and advanced levels. Beginners
           learn first, while intermediate and advanced learners begin with a

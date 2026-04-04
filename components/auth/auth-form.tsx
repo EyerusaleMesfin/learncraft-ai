@@ -22,6 +22,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
   const handleRegister = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
     const isStrongPassword = Object.values(passwordChecks).every(Boolean);
 
     if (!fullName.trim()) {
@@ -43,12 +44,12 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         : undefined;
 
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: normalizedEmail,
       password,
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          full_name: fullName
+          full_name: fullName.trim()
         }
       }
     });
@@ -70,9 +71,10 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   };
 
   const handleLogin = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: normalizedEmail,
       password
     });
 
@@ -146,7 +148,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
           : "Register with email/password. Supabase will handle the secure account flow."}
       </p>
 
-      <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
+      <form className="mt-8 space-y-4" onSubmit={handleSubmit} data-testid={`${mode}-form`}>
         {mode === "register" ? (
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Full name</label>
@@ -154,8 +156,11 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
               type="text"
+              name="fullName"
+              autoComplete="name"
               placeholder="Ada Lovelace"
               className="input-field"
+              data-testid="full-name-input"
             />
           </div>
         ) : null}
@@ -166,8 +171,11 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             type="email"
+            name="email"
+            autoComplete="email"
             placeholder="you@example.com"
             className="input-field"
+            data-testid="email-input"
           />
           <p className="mt-2 text-xs text-slate-500">
             {email.length === 0 || validateEmail(email)
@@ -182,8 +190,11 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             type="password"
+            name="password"
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
             placeholder="Create a strong password"
             className="input-field"
+            data-testid="password-input"
           />
           <p className="mt-2 text-xs font-semibold text-slate-600">
             Password strength: {passwordStrength}
@@ -211,24 +222,38 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 type="password"
+                name="confirmPassword"
+                autoComplete="new-password"
                 placeholder="Repeat your password"
                 className="input-field"
+                data-testid="confirm-password-input"
               />
             </div>
           </>
         ) : null}
 
-        <button type="submit" className="btn-primary w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Please wait..." : mode === "login" ? "Login" : "Register"}
+        <button
+          type="submit"
+          className="btn-primary w-full"
+          disabled={isSubmitting}
+          data-testid="auth-submit-button"
+        >
+          {isSubmitting ? "Please wait..." : mode === "login" ? "Login" : "Create Account"}
         </button>
       </form>
 
-      <button type="button" className="btn-secondary mt-3 w-full" onClick={handleGoogleSignIn}>
+      <button
+        type="button"
+        className="btn-secondary mt-3 w-full"
+        onClick={handleGoogleSignIn}
+        data-testid="google-auth-button"
+      >
         Continue with Google
       </button>
 
       {message ? (
         <div
+          data-testid="auth-message"
           className={`mt-4 rounded-2xl border p-4 text-sm ${
             messageTone === "success"
               ? "border-teal-200 bg-teal-50 text-teal-900"

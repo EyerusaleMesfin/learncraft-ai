@@ -29,6 +29,8 @@ Required variables:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
+OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=gpt-4.1-mini
 ```
 
 ## Supabase Setup
@@ -62,8 +64,52 @@ For Google OAuth, configure the Google provider in Supabase and add:
 npm.cmd run dev
 ```
 
+## Browser Auth Tests
+
+This repo includes Playwright browser tests for the Supabase auth flow.
+
+Install the extra test dependency and browser once:
+
+```powershell
+npm.cmd install
+npx.cmd playwright install chromium
+```
+
+Optional environment variables for local auth tests:
+
+```env
+E2E_EXISTING_USER_EMAIL=learner@example.com
+E2E_EXISTING_USER_PASSWORD=StrongPass123!
+E2E_SIGNUP_EMAIL_DOMAIN=example.com
+E2E_SIGNUP_EMAIL_PREFIX=learncraft
+E2E_SIGNUP_FULL_NAME=Learn Craft Tester
+E2E_SIGNUP_PASSWORD=StrongPass123!
+E2E_TEST_GOOGLE=true
+```
+
+Notes:
+
+- `E2E_EXISTING_USER_*` powers the login and logout tests.
+- `E2E_SIGNUP_*` powers the register test with a unique email on every run.
+- `E2E_TEST_GOOGLE=true` enables the Google redirect smoke test.
+- If email confirmation is enabled in Supabase, the signup test passes when the app shows the confirmation message.
+
+Run the suite:
+
+```powershell
+npm.cmd run test:e2e
+```
+
+Run it with a visible browser:
+
+```powershell
+npm.cmd run test:e2e:headed
+```
+
 ## Notes
 
 - Authentication is now handled with Supabase.
 - Middleware refreshes sessions and protects routes.
 - Dashboard and track pages redirect to login when the user is not authenticated.
+- Track pages now include subcategory selection and OpenAI-backed recommendations.
+- If `OPENAI_API_KEY` is missing, the app falls back to curated static resources.
